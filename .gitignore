@@ -25,3 +25,10 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
+# 测试输出文件
+test_report.txt
+*.log
+
+# 技术文档（本地参考）
+技术文档/
