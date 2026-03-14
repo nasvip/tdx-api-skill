@@ -1,14 +1,13 @@
 import os
 import requests
-from typing import List, Dict, Optional, Any
-from datetime import datetime
+from typing import List, Dict, Optional
 
+# 尝试导入dotenv，如果没有安装则忽略
 try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
     pass
-
 
 class TDXStockQuery:
     def __init__(self):
@@ -17,6 +16,11 @@ class TDXStockQuery:
             raise ValueError("环境变量 TDX_API_URL 未设置，请先配置API地址")
         
         self.api_url = self.api_url.rstrip('/')
+        
+        # 初始化akshare API地址
+        self.akshare_api_url = os.getenv('AKSHARE_API_URL')
+        if self.akshare_api_url:
+            self.akshare_api_url = self.akshare_api_url.rstrip('/')
     
     def _make_request(self, method: str, endpoint: str, params: Optional[Dict] = None, 
                      data: Optional[Dict] = None) -> Dict:
@@ -521,8 +525,8 @@ class TDXStockQuery:
         """计算收益区间指标
         
         Args:
-            code: 股票代码
-            start_date: 基准日期（YYYYMMDD）
+            code: 股票代码，如 '000001'
+            start_date: 基准日期，如 '2023-01-01'
             
         Returns:
             dict: 收益区间分析结果
@@ -533,6 +537,82 @@ class TDXStockQuery:
             return {"code": -1, "message": "基准日期不能为空"}
         
         return self._make_request('GET', '/api/income', params={'code': code, 'start_date': start_date})
+    
+    def get_stock_news(self, symbol: str) -> Dict:
+        """获取股票新闻
+        
+        Args:
+            symbol: 股票代码或关键词，如 '603777' 或 '宁德时代'
+            
+        Returns:
+            dict: 新闻数据
+        """
+        if not symbol:
+            return {"code": -1, "message": "股票代码或关键词不能为空"}
+        
+        if not self.akshare_api_url:
+            return {"code": -1, "message": "环境变量 AKSHARE_API_URL 未设置，请先配置akshare API地址"}
+        
+        try:
+            url = f"{self.akshare_api_url}/api/public/stock_news_em"
+            response = requests.get(url, params={'symbol': symbol}, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+            return {"code": 0, "message": "success", "data": data}
+        except requests.RequestException as e:
+            return {"code": -1, "message": f"请求失败: {str(e)}"}
+        except Exception as e:
+            return {"code": -1, "message": f"发生错误: {str(e)}"}
+    
+    def get_stock_disclosure(self, symbol: str, start_date: str, end_date: str, 
+                          market: str = '沪深京', category: Optional[str] = None, 
+                          keyword: Optional[str] = None) -> Dict:
+        """获取股票公告
+        
+        Args:
+            symbol: 股票代码，如 '300058'
+            start_date: 起始日期，格式YYYYMMDD，如 '20260101'
+            end_date: 结束日期，格式YYYYMMDD，如 '20260314'
+            market: 市场，默认'沪深京'
+            category: 公告分类，如 '年报'、'董事会'、'权益分派' 等
+            keyword: 关键词搜索，在公告标题中进行搜索
+            
+        Returns:
+            dict: 公告数据
+        """
+        if not symbol:
+            return {"code": -1, "message": "股票代码不能为空"}
+        if not start_date:
+            return {"code": -1, "message": "起始日期不能为空"}
+        if not end_date:
+            return {"code": -1, "message": "结束日期不能为空"}
+        
+        if not self.akshare_api_url:
+            return {"code": -1, "message": "环境变量 AKSHARE_API_URL 未设置，请先配置akshare API地址"}
+        
+        try:
+            url = f"{self.akshare_api_url}/api/public/stock_zh_a_disclosure_report_cninfo"
+            params = {
+                'symbol': symbol,
+                'start_date': start_date,
+                'end_date': end_date
+            }
+            
+            if market:
+                params['market'] = market
+            if category:
+                params['category'] = category
+            if keyword:
+                params['keyword'] = keyword
+            
+            response = requests.get(url, params=params, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+            return {"code": 0, "message": "success", "data": data}
+        except requests.RequestException as e:
+            return {"code": -1, "message": f"请求失败: {str(e)}"}
+        except Exception as e:
+            return {"code": -1, "message": f"发生错误: {str(e)}"}
 
 
 def format_price(price_in_li: int) -> float:

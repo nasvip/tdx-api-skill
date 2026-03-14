@@ -235,6 +235,46 @@ def main():
         print(f"{'='*60}")
         print(f"❌ 失败: {e}")
     
+    # 26. 测试个股新闻查询
+    test_count += 1
+    try:
+        result = stock_query.get_stock_news('603777')
+        print(f"\n{'='*60}")
+        print(f"测试: 26. 个股新闻查询（603777）")
+        print(f"{'='*60}")
+        if result.get('code') == 0:
+            print(f"✅ 成功: 找到 {len(result.get('data', []))} 条新闻")
+            if result.get('data'):
+                print(f"第一条新闻: {result['data'][0]['新闻标题']}")
+            success_count += 1
+        else:
+            print(f"⚠️  提示: {result.get('message')}")
+    except Exception as e:
+        print(f"\n{'='*60}")
+        print(f"测试: 26. 个股新闻查询（603777）")
+        print(f"{'='*60}")
+        print(f"❌ 失败: {e}")
+    
+    # 27. 测试关键词新闻查询
+    test_count += 1
+    try:
+        result = stock_query.get_stock_news('宁德时代')
+        print(f"\n{'='*60}")
+        print(f"测试: 27. 关键词新闻查询（宁德时代）")
+        print(f"{'='*60}")
+        if result.get('code') == 0:
+            print(f"✅ 成功: 找到 {len(result.get('data', []))} 条新闻")
+            if result.get('data'):
+                print(f"第一条新闻: {result['data'][0]['新闻标题']}")
+            success_count += 1
+        else:
+            print(f"⚠️  提示: {result.get('message')}")
+    except Exception as e:
+        print(f"\n{'='*60}")
+        print(f"测试: 27. 关键词新闻查询（宁德时代）")
+        print(f"{'='*60}")
+        print(f"❌ 失败: {e}")
+    
     # 测试总结
     print(f"\n{'='*60}")
     print("测试总结")
